@@ -5,9 +5,9 @@ require 'webrick'
 module FFMPEG
   describe Movie do
     describe "initializing" do
-      let(:fake_output) { StringIO.new(File.read("#{fixture_path}/outputs/#{fixture_file}")) }
+      let(:fake_output) { File.read("#{fixture_path}/outputs/#{fixture_file}") }
       let(:movie) do
-        allow(Open3).to receive(:popen3).and_yield(nil, nil, fake_output)
+        allow(Open3).to receive(:capture3).and_return([nil, fake_output, nil])
         Movie.new(__FILE__)
       end
 
@@ -235,7 +235,7 @@ module FFMPEG
 
       describe 'Special cases: ' do
         let(:movie) do
-          allow(Open3).to receive(:popen3).and_yield(nil,fake_output,nil)
+          allow(Open3).to receive(:capture3).and_return([fake_output, nil, nil])
           Movie.new(__FILE__)
         end
 
@@ -312,8 +312,8 @@ module FFMPEG
         context "given a file with non supported audio" do
           let(:fixture_file) { 'file_with_non_supported_audio_stdout.txt' }
           let(:movie) do
-            fake_stderr = StringIO.new(File.read("#{fixture_path}/outputs/file_with_non_supported_audio_stderr.txt"))
-            allow(Open3).to receive(:popen3).and_yield(nil,fake_output,fake_stderr)
+            fake_stderr = File.read("#{fixture_path}/outputs/file_with_non_supported_audio_stderr.txt")
+            allow(Open3).to receive(:capture3).and_return([fake_output, fake_stderr, nil])
             Movie.new(__FILE__)
           end
 
@@ -325,8 +325,8 @@ module FFMPEG
         context "given a file with non supported audio and video" do
           let(:fixture_file) { 'file_with_non_supported_audio_and_video_stdout.txt' }
           let(:movie) do
-            fake_stderr = StringIO.new(File.read("#{fixture_path}/outputs/file_with_non_supported_audio_and_video_stderr.txt"))
-            allow(Open3).to receive(:popen3).and_yield(nil, fake_output, fake_stderr)
+            fake_stderr = File.read("#{fixture_path}/outputs/file_with_non_supported_audio_and_video_stderr.txt")
+            allow(Open3).to receive(:capture3).and_return([fake_output, fake_stderr, nil])
             Movie.new(__FILE__)
           end
 

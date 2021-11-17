@@ -2,7 +2,8 @@ require 'open3'
 
 module FFMPEG
   class Transcoder
-    attr_reader :command, :input
+
+    attr_reader :command, :input, :last_output_line
 
     @@timeout = 30
 
@@ -83,6 +84,8 @@ module FFMPEG
                 yield(progress) if block_given?
               end
             end
+
+            @last_output_line = line
           end
 
           if timeout
@@ -91,8 +94,7 @@ module FFMPEG
             stderr.each('size=', &next_line)
           end
 
-        @errors << "ffmpeg returned non-zero exit code" unless wait_thr.value.success?
-
+          @errors << "ffmpeg returned non-zero exit code" unless wait_thr.value.success?
         rescue Timeout::Error => e
           FFMPEG.logger.error "Process hung...\n@command\n#{command}\nOutput\n#{@output}\n"
           raise Error, "Process hung. Full output: #{@output}"
@@ -108,6 +110,8 @@ module FFMPEG
         yield(1.0) if block_given?
         FFMPEG.logger.info "Transcoding of #{input} to #{@output_file} succeeded\n"
       else
+        p 'last_output_line', last_output_line
+
         errors = "Errors: #{@errors.join(", ")}. "
         FFMPEG.logger.error "Failed encoding...\n#{command}\n\n#{@output}\n#{errors}\n"
         raise Error, "Failed encoding.#{errors}Full output: #{@output}"
