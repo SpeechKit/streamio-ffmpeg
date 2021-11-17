@@ -3,6 +3,8 @@ require 'open3'
 module FFMPEG
   class Transcoder
 
+    SIGTERM_MESSAGE = 'Exiting normally, received signal 15'.freeze
+
     attr_reader :command, :input, :last_output_line
 
     @@timeout = 30
@@ -110,11 +112,14 @@ module FFMPEG
         yield(1.0) if block_given?
         FFMPEG.logger.info "Transcoding of #{input} to #{@output_file} succeeded\n"
       else
-        p 'last_output_line', last_output_line
-
         errors = "Errors: #{@errors.join(", ")}. "
         FFMPEG.logger.error "Failed encoding...\n#{command}\n\n#{@output}\n#{errors}\n"
-        raise Error, "Failed encoding.#{errors}Full output: #{@output}"
+
+        if last_output_line && last_output_line.include?(SIGTERM_MESSAGE)
+          raise SigTermError, SIGTERM_MESSAGE
+        else
+          raise Error, "Failed encoding.#{errors}Full output: #{@output}"
+        end
       end
     end
 
